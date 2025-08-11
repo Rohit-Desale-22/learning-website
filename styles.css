@@ -2,7 +2,7 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    background-image: url("assets/images/bg_img_pc.jpg");
+    background-image: black;
     background-repeat: no-repeat;
     background-position: left center;
     background-attachment: fixed;
