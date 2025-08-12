@@ -11,25 +11,76 @@
   <h1>Welcome to your Learning Dashboard</h1>
 
   <nav>
-    <button onclick="showContent('text')">Text Lesson</button>
-    <button onclick="showContent('video')">Video Lesson</button>
-    <button onclick="showContent('quiz')">Quiz</button>
+    <button id="btn-text">Text Lesson</button>
+    <button id="btn-video">Video Lesson</button>
+    <button id="btn-quiz">Quiz</button>
   </nav>
 
   <section id="content-area">
     <p>Please select a content type above.</p>
   </section>
 
-  <script>
-    function showContent(type) {
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBpnv5pXqqIGW6zpqMlzYJHYduF9d4h6zw",
+      authDomain: "learning-site-52f96.firebaseapp.com",
+      projectId: "learning-site-52f96",
+      storageBucket: "learning-site-52f96.firebasestorage.app",
+      messagingSenderId: "490562183223",
+      appId: "1:490562183223:web:8dc2ef759dfb50455adfb2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Function to get user IP from external API
+    async function getUserIP() {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+      } catch (err) {
+        console.warn('Failed to fetch IP, defaulting to 0.0.0.0');
+        return '0.0.0.0';
+      }
+    }
+
+    // Send clickstream event to Firestore with real IP
+    async function sendClickstream(eventContext, component, eventName, description) {
+      const timestamp = new Date().toLocaleString();
+      const origin = "web";
+      const ip = await getUserIP();
+
+      try {
+        await addDoc(collection(db, "clickstream_events"), {
+          time: serverTimestamp(),
+          event_context: eventContext,
+          component: component,
+          event_name: eventName,
+          description: description,
+          origin: origin,
+          ip_address: ip
+        });
+        console.log("Clickstream event saved to Firestore.");
+      } catch (error) {
+        console.error("Error saving clickstream event:", error);
+      }
+    }
+
+    window.showContent = function(type) {
       const contentArea = document.getElementById('content-area');
 
       if(type === 'text') {
         contentArea.innerHTML = `
           <h2>Text Lesson</h2>
           <p>2+2 = 4</p>
-          <p>Sky is blue !</p>
+          <p>Sky is blue!</p>
         `;
+        sendClickstream("Dashboard", "Navigation", "Clicked text button", "User clicked to view text content");
       }
       else if(type === 'video') {
         contentArea.innerHTML = `
@@ -40,6 +91,7 @@
           </video>
           <p>Watch this video lesson carefully!</p>
         `;
+        sendClickstream("Dashboard", "Navigation", "Clicked video button", "User clicked to view video content");
       }
       else if(type === 'quiz') {
         contentArea.innerHTML = `
@@ -57,14 +109,20 @@
               <label><input type="radio" name="q2" value="Green"> Green</label><br>
               <label><input type="radio" name="q2" value="Red"> Red</label><br>
             </div>
-            <button type="button" onclick="checkAnswers()">Submit Quiz</button>
+            <button type="button" id="submit-quiz">Submit Quiz</button>
           </form>
           <p id="result"></p>
         `;
-      }
-    }
+        sendClickstream("Dashboard", "Navigation", "Clicked quiz button", "User clicked to view quiz content");
 
-    function checkAnswers() {
+        document.getElementById('submit-quiz').addEventListener('click', () => {
+          checkAnswers();
+          sendClickstream("Dashboard", "Quiz", "Quiz submitted", "User submitted the quiz");
+        });
+      }
+    };
+
+    window.checkAnswers = function() {
       let score = 0;
       const resultEl = document.getElementById('result');
       const q1 = document.querySelector('input[name="q1"]:checked');
@@ -74,7 +132,11 @@
       if (q2 && q2.value === 'Blue') score++;
 
       resultEl.textContent = `You scored ${score} out of 2.`;
-    }
+    };
+
+    document.getElementById('btn-text').addEventListener('click', () => window.showContent('text'));
+    document.getElementById('btn-video').addEventListener('click', () => window.showContent('video'));
+    document.getElementById('btn-quiz').addEventListener('click', () => window.showContent('quiz'));
   </script>
 
 </body>
