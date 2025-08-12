@@ -1,34 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-
-    <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Learning Website - Auth</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="script.js" defer></script>
 </head>
-<body>
-    
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+<body class="index-page">
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyBpnv5pXqqIGW6zpqMlzYJHYduF9d4h6zw",
-    authDomain: "learning-site-52f96.firebaseapp.com",
-    projectId: "learning-site-52f96",
-    storageBucket: "learning-site-52f96.firebasestorage.app",
-    messagingSenderId: "490562183223",
-    appId: "1:490562183223:web:8dc2ef759dfb50455adfb2"
-  };
+  <div class="forms-wrapper">
+    <h2>Register</h2>
+    <form id="register-form">
+      <input type="email" id="register-email" placeholder="Email" required />
+      <input type="password" id="register-password" placeholder="Password" required />
+      <button type="submit">Register</button>
+      <p id="register-message"></p>
+    </form>
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
+    <h2>Login</h2>
+    <form id="login-form">
+      <input type="email" id="login-email" placeholder="Email" required />
+      <input type="password" id="login-password" placeholder="Password" required />
+      <button type="submit">Login</button>
+      <p id="login-message"></p>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBpnv5pXqqIGW6zpqMlzYJHYduF9d4h6zw",
+      authDomain: "learning-site-52f96.firebaseapp.com",
+      projectId: "learning-site-52f96",
+      storageBucket: "learning-site-52f96.firebasestorage.app",
+      messagingSenderId: "490562183223",
+      appId: "1:490562183223:web:8dc2ef759dfb50455adfb2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      const messageEl = document.getElementById('register-message');
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        messageEl.style.color = 'green';
+        messageEl.textContent = 'Registration successful! You can now log in.';
+      } catch (error) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = error.message;
+      }
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const messageEl = document.getElementById('login-message');
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        messageEl.style.color = 'green';
+        messageEl.textContent = 'Login successful! Welcome, ' + userCredential.user.email;
+        window.location.href = 'dashboard.html';
+      } catch (error) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = error.message;
+      }
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        console.log("User logged in:", user.email);
+      } else {
+        console.log("No user logged in");
+      }
+    });
+  </script>
+
 </body>
-</html> 
+</html>
