@@ -20,11 +20,35 @@
     <p>Please select a content type above.</p>
   </section>
 
+  <hr>
+
+  <h2>Clickstream Data</h2>
+  <button onclick="exportToExcel()">Download Excel</button>
+  <table id="clickstreamTable" border="1">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Event context</th>
+        <th>Component</th>
+        <th>Event name</th>
+        <th>Description</th>
+        <th>Origin</th>
+        <th>IP address</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Excel Export Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    import { 
+      getFirestore, collection, addDoc, serverTimestamp, getDocs 
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-    // Initialize Firebase
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBpnv5pXqqIGW6zpqMlzYJHYduF9d4h6zw",
       authDomain: "learning-site-52f96.firebaseapp.com",
@@ -37,7 +61,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to get user IP from external API
+    // Get IP address
     async function getUserIP() {
       try {
         const response = await fetch('https://api.ipify.org?format=json');
@@ -49,9 +73,8 @@
       }
     }
 
-    // Send clickstream event to Firestore with real IP
+    // Send clickstream event
     async function sendClickstream(eventContext, component, eventName, description) {
-      const timestamp = new Date().toLocaleString();
       const origin = "web";
       const ip = await getUserIP();
 
@@ -66,53 +89,81 @@
           ip_address: ip
         });
         console.log("Clickstream event saved to Firestore.");
+        loadClickstreamData();
       } catch (error) {
         console.error("Error saving clickstream event:", error);
       }
     }
 
+    // Display content and track
     window.showContent = function(type) {
       const contentArea = document.getElementById('content-area');
 
       if(type === 'text') {
         contentArea.innerHTML = `
           <h2>Text Lesson</h2>
-          <p>2+2 = 4</p>
-          <p>Sky is blue!</p>
+          <p>Artificial Intelligence (AI) refers to the simulation of human intelligence in machines that are designed to think, learn, and make decisions. AI systems can analyze large amounts of data, recognize patterns, and solve problems in ways that mimic human reasoning. One of the most important branches of AI is Machine Learning (ML), which allows systems to improve their performance over time by learning from past experiences and data without being explicitly programmed.
+            Within Machine Learning, there is a more specialized approach called Deep Learning. Deep Learning uses artificial neural networks with many layers, enabling computers to process massive datasets, identify complex patterns, and achieve remarkable accuracy in tasks such as image recognition, natural language understanding, and speech processing. These technologies have revolutionized industries ranging from healthcare and finance to transportation and education.
+            However, AI also presents several challenges and concerns. Ethical issues such as bias in algorithms, invasion of privacy, and the displacement of human jobs have become increasingly important to address. For example, an AI system trained on biased data may make unfair decisions in hiring, lending, or law enforcement. Privacy concerns arise when AI collects and analyzes personal data without clear consent. Job displacement occurs when automation replaces tasks traditionally performed by humans, requiring society to adapt through reskilling and new job creation.
+            To fully understand and responsibly use AI, individuals need not only strong technical skills but also awareness of its social, economic, and ethical implications. By combining technical expertise with ethical reasoning, we can ensure that AI serves humanity in a fair, transparent, and beneficial way.</p>
+         
         `;
         sendClickstream("Dashboard", "Navigation", "Clicked text button", "User clicked to view text content");
       }
       else if(type === 'video') {
         contentArea.innerHTML = `
           <h2>Video Lesson</h2>
-          <video controls>
-            <source src="assets/videos/sample-video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
+          <iframe width="560" height="315" 
+              src="https://www.youtube.com/embed/vBePahzcXfc" 
+              title="YouTube video player" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen>
+          </iframe>
           <p>Watch this video lesson carefully!</p>
         `;
+
         sendClickstream("Dashboard", "Navigation", "Clicked video button", "User clicked to view video content");
       }
       else if(type === 'quiz') {
         contentArea.innerHTML = `
-          <h2>Simple Quiz</h2>
+          <h2>AI Knowledge Quiz</h2>
           <form id="quiz-form">
             <div>
-              <p>1. What is 2 + 2?</p>
-              <label><input type="radio" name="q1" value="3"> 3</label><br>
-              <label><input type="radio" name="q1" value="4"> 4</label><br>
-              <label><input type="radio" name="q1" value="5"> 5</label><br>
+              <p>1. What does Artificial Intelligence (AI) aim to simulate?</p>
+              <label><input type="radio" name="q1" value="Animal instincts"> Animal instincts</label><br>
+              <label><input type="radio" name="q1" value="Human intelligence"> Human intelligence</label><br>
+              <label><input type="radio" name="q1" value="Natural disasters"> Natural disasters</label><br>
             </div>
             <div>
-              <p>2. What color is the sky?</p>
-              <label><input type="radio" name="q2" value="Blue"> Blue</label><br>
-              <label><input type="radio" name="q2" value="Green"> Green</label><br>
-              <label><input type="radio" name="q2" value="Red"> Red</label><br>
+              <p>2. Machine Learning (ML) is a subset of which field?</p>
+              <label><input type="radio" name="q2" value="Artificial Intelligence"> Artificial Intelligence</label><br>
+              <label><input type="radio" name="q2" value="Robotics"> Robotics</label><br>
+              <label><input type="radio" name="q2" value="Data entry"> Data entry</label><br>
+            </div>
+            <div>
+              <p>3. What does Deep Learning primarily use to process data?</p>
+              <label><input type="radio" name="q3" value="Spreadsheets"> Spreadsheets</label><br>
+              <label><input type="radio" name="q3" value="Neural networks with multiple layers"> Neural networks with multiple layers</label><br>
+              <label><input type="radio" name="q3" value="Paper charts"> Paper charts</label><br>
+            </div>
+            <div>
+              <p>4. Which of these is an ethical concern in AI?</p>
+              <label><input type="radio" name="q4" value="Bias in algorithms"> Bias in algorithms</label><br>
+              <label><input type="radio" name="q4" value="Fast internet speed"> Fast internet speed</label><br>
+              <label><input type="radio" name="q4" value="Increased screen brightness"> Increased screen brightness</label><br>
+            </div>
+            <div>
+              <p>5. Why is ethical awareness important when working with AI?</p>
+              <label><input type="radio" name="q5" value="To make AI more entertaining"> To make AI more entertaining</label><br>
+              <label><input type="radio" name="q5" value="To ensure AI benefits humanity fairly"> To ensure AI benefits humanity fairly</label><br>
+              <label><input type="radio" name="q5" value="To replace all human jobs immediately"> To replace all human jobs immediately</label><br>
             </div>
             <button type="button" id="submit-quiz">Submit Quiz</button>
           </form>
           <p id="result"></p>
         `;
+
         sendClickstream("Dashboard", "Navigation", "Clicked quiz button", "User clicked to view quiz content");
 
         document.getElementById('submit-quiz').addEventListener('click', () => {
@@ -122,21 +173,88 @@
       }
     };
 
+    // Quiz check
     window.checkAnswers = function() {
       let score = 0;
       const resultEl = document.getElementById('result');
-      const q1 = document.querySelector('input[name="q1"]:checked');
-      const q2 = document.querySelector('input[name="q2"]:checked');
 
-      if (q1 && q1.value === '4') score++;
-      if (q2 && q2.value === 'Blue') score++;
+      // Correct answers based on your HTML
+      const correctAnswers = {
+        q1: "Human intelligence",
+        q2: "Artificial Intelligence",
+        q3: "Neural networks with multiple layers",
+        q4: "Bias in algorithms",
+        q5: "To ensure AI benefits humanity fairly"
+      };
 
-      resultEl.textContent = `You scored ${score} out of 2.`;
+      // Loop through each question in correctAnswers
+      for (let question in correctAnswers) {
+        const selected = document.querySelector(`input[name="${question}"]:checked`);
+        if (selected && selected.value === correctAnswers[question]) {
+          score++;
+        }
+      }
+
+      // Get total number of questions dynamically
+      const totalQuestions = Object.keys(correctAnswers).length;
+      resultEl.textContent = `You scored ${score} out of ${totalQuestions}.`;
     };
 
+
+    // Load clickstream from Firestore
+    async function loadClickstreamData() {
+      const querySnapshot = await getDocs(collection(db, "clickstream_events"));
+      let events = [];
+      querySnapshot.forEach(doc => events.push(doc.data()));
+
+      // Sort newest first
+      events.sort((a, b) => b.time?.toMillis() - a.time?.toMillis());
+
+      // Update table
+      const tableBody = document.querySelector("#clickstreamTable tbody");
+      tableBody.innerHTML = "";
+      events.forEach(e => {
+        const timeStr = e.time ? new Date(e.time.toMillis()).toLocaleString() : "";
+        tableBody.innerHTML += `
+          <tr>
+            <td>${timeStr}</td>
+            <td>${e.event_context}</td>
+            <td>${e.component}</td>
+            <td>${e.event_name}</td>
+            <td>${e.description}</td>
+            <td>${e.origin}</td>
+            <td>${e.ip_address}</td>
+          </tr>
+        `;
+      });
+
+      window.clickstreamData = events; // store for export
+    }
+
+    // Export to Excel
+    window.exportToExcel = function() {
+      const ws = XLSX.utils.json_to_sheet(window.clickstreamData.map(e => ({
+        "Time": e.time ? new Date(e.time.toMillis()).toLocaleString() : "",
+        "Event context": e.event_context,
+        "Component": e.component,
+        "Event name": e.event_name,
+        "Description": e.description,
+        "Origin": e.origin,
+        "IP address": e.ip_address
+      })));
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Clickstream Data");
+      XLSX.writeFile(wb, "clickstream_data.xlsx");
+    };
+
+    // Button events
     document.getElementById('btn-text').addEventListener('click', () => window.showContent('text'));
     document.getElementById('btn-video').addEventListener('click', () => window.showContent('video'));
     document.getElementById('btn-quiz').addEventListener('click', () => window.showContent('quiz'));
+
+    // Initial load
+    loadClickstreamData();
   </script>
 
 </body>
